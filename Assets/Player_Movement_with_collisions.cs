@@ -6,12 +6,14 @@ public class Player_Movement : MonoBehaviour {
 	//public GameObject	bomb; 
 	public Vector3 		velocity;
 	public float 		speed = 10;
-	public bool 		locked = false; 
-	public bool 		goingRight = false; 
-	public bool 		goingLeft = false; 
-	public bool 		goingUp = false; 
-	public bool 		goingDown = false; 
-
+	public bool 		locked = false;  
+	public bool 		goinginX = false; 
+	public bool 		goinginY = false;
+	public bool 		cantGoRight = false; 
+	public bool 		cantGoLeft = false;
+	public bool 		cantGoDown = false; 
+	public bool			cantGoUp = false;
+	public int 			numCollwith = 0; 
 
 	public float 		timeSinceBombDrop	= 0.5f;
 	//bool bombOnMap = false;
@@ -46,11 +48,45 @@ public class Player_Movement : MonoBehaviour {
 	}
 
 	void OnTriggerEnter(Collider col) {
+		Vector3 wallPos = col.gameObject.transform.position; 
+		Vector3 manPos = transform.position; 
 		locked = true; 
-		if (velocity.x > 0) goingRight = true;
-		else if (velocity.x < 0) goingLeft = true;
-		else if (velocity.y > 0) goingUp = true;
-		else if (velocity.y < 0) goingDown = true;
+		col.gameObject.renderer.material.color = Color.red;
+		numCollwith++; 
+		if (velocity.x != 0) goinginX = true;
+		if (velocity.y != 0) goinginY = true;
+		if (goinginX) {
+			// first stop motion in direction of wall 
+			if (wallPos.x > manPos.x) { // wall on left 
+				cantGoRight = true; 
+			}
+			if (wallPos.x < manPos.x) { // wall on right 
+				cantGoLeft = true; 
+			}
+			// check if passed y direction boundaries
+			if (manPos.y > Game_State.MAP_HEIGHT - 2) {
+				cantGoUp = true; 
+			}
+			if (manPos.y < 2) {
+				cantGoDown = true; 
+			}
+		}
+		if (goinginY) {
+			// stop motion in direction of wall 
+			if (wallPos.y > manPos.y) { // wall above
+				cantGoUp = true; 
+			}
+			if (wallPos.y < manPos.y) { // wall below 
+				cantGoDown = true;
+			}
+			// check if passed x direction boundaries
+			if (manPos.x > Game_State.MAP_WIDTH + 2) {
+				cantGoRight = true;
+			}
+			if (manPos.x < 2) {
+				cantGoLeft = true;
+			}
+		}
 	}
 
 
@@ -58,16 +94,16 @@ public class Player_Movement : MonoBehaviour {
 		Vector3 pos = transform.position;
 		velocity.y = Input.GetAxis("Vertical"); 
 		velocity.x = Input.GetAxis ("Horizontal"); 
-		if (velocity.x < 0 && goingLeft) {
+		if (velocity.x < 0 && cantGoLeft) {
 			velocity.x = 0;
 		}
-		else if (velocity.x > 0 && goingRight) { 
+		if (velocity.x > 0 && cantGoRight) { 
 			velocity.x = 0;
 		}
-		if (velocity.y < 0 && goingDown) {
+		if (velocity.y < 0 && cantGoDown) {
 			velocity.y = 0;
 		}
-		if (velocity.y > 0 && goingUp) {
+		if (velocity.y > 0 && cantGoUp) {
 			velocity.y = 0;
 		}
 		pos += velocity * Time.deltaTime * speed; 
@@ -75,11 +111,17 @@ public class Player_Movement : MonoBehaviour {
 	}
 	 
 	void OnTriggerExit(Collider col) {
-		locked = false; 
-		goingRight = false; 
-		goingLeft = false; 
-		goingUp = false; 
-		goingDown = false; 
+		numCollwith--;
+		if (numCollwith == 0) {
+			locked = false;
+			goinginX = false; 
+			goinginY = false; 
+			cantGoUp = false; 
+			cantGoDown = false;
+			cantGoLeft = false; 
+			cantGoRight = false; 
+		}
+		col.gameObject.renderer.material.color = Color.grey; 
 	}
 	
 }
